@@ -81,6 +81,13 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             await process_main_menu(user_id, text, update, context)
     elif state == AppState.STORY_LIST:
         await process_story_list(user_id, text, update, context)
+    
+    # # Kirim menu utama jika tidak dalam STATE STORY_LIST
+    # if state != AppState.STORY_LIST:
+    #     await update.message.reply_text(get_menu_text(), parse_mode='Markdown')
+    #     context.user_data['state'] = AppState.MAIN_MENU
+
+
 
 async def process_main_menu(user_id, text, update, context):
     if text.isdigit() and text == "1":
@@ -131,10 +138,18 @@ async def show_story_detail(story_id, update, context):
     story = session.query(CeritaRakyat).filter_by(id=story_id).first()
     if story:
         response = f'🟢 *{story.judul}*\n\n{story.isi}'
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode='Markdown')
     else:
         response = "Maaf, cerita yang Anda pilih tidak ditemukan."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+        return
+    
+    # Setelah menampilkan cerita, kembalikan state pengguna ke MAIN_MENU
+    context.user_data['state'] = AppState.MAIN_MENU
+    
+    # Kirim menu utama seperti pada saat /start
+    await update.message.reply_text(get_menu_text(), parse_mode='Markdown')
+
 
 def log_menu_selection(user_id):
     query_log = QueryLog(
